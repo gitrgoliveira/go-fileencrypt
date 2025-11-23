@@ -30,9 +30,10 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('go.sum') }}
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-go-${{ matrix.go-version }}-
+            ${{ runner.os }}-go-
 
       - name: Install modules
         run: go mod download
