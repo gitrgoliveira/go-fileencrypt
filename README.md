@@ -7,6 +7,14 @@
 
 Secure, streaming file encryption and decryption library for Go using AES-256-GCM. Designed for cross-platform use with memory-safe key handling, chunked processing for large files, and support for external libraries to enhance functionality.
 
+> [!WARNING]
+> This library is provided "as-is" under the Mozilla Public License 2.0 (see [LICENSE](LICENSE) for details). While it implements industry-standard cryptographic primitives (AES-256-GCM), **it has not undergone independent security audits**. For production use, especially in security-critical applications, you should:
+> - Conduct your own security review or hire a professional security auditor
+> - Follow the security best practices outlined in this documentation
+> - Stay updated on security advisories and updates
+> 
+> The author makes no warranties regarding the library's security or fitness for any particular purpose.
+
 ## Features
 
 - **Strong Encryption**: AES-256-GCM with authenticated encryption
