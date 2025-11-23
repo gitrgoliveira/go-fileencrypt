@@ -6,7 +6,7 @@ test:
 	go test ./... -v -race
 
 coverage:
-	go test -coverprofile=coverage.out ./...
+	go test -coverprofile=coverage.out $(shell go list ./... | grep -v '/examples/' | grep -v '/benchmark')
 	go tool cover -html=coverage.out
 
 lint:
