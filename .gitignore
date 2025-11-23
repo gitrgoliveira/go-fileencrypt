@@ -1,0 +1,31 @@
+# .gitignore for go-fileencrypt
+*.exe
+*.test
+vendor/
+*.out
+coverage.out
+codeql-report.sarif
+.DS_Store
+.idea/
+.vscode/
+*.tmp
+*.swp
+
+# CoPilot files
+docs/
+!docs/FORMAT.md
+specs/
+.github/copilot-instructions.md
+.github/prompts
+.specify
+.vscode
+
+# Additional Go and universal ignores
+*.log
+*.env*
+dist/
+build/
+__pycache__/
+*.pyc
+gosec-report.json
+prompts/
