@@ -18,7 +18,6 @@ import (
 	"os"
 	"sync"
 
-	crypto "github.com/gitrgoliveira/go-fileencrypt/internal/crypto"
 	"github.com/gitrgoliveira/go-fileencrypt/secure"
 )
 
@@ -74,13 +73,13 @@ func (d *Decryptor) DecryptFile(ctx context.Context, srcPath, dstPath string) er
 
 	srcFile, err := os.Open(srcPath) // #nosec G304 -- File path provided by caller, library purpose is file decryption
 	if err != nil {
-		return crypto.WrapError("open source file", err)
+		return WrapError("open source file", err)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := os.Create(dstPath) // #nosec G304 -- File path provided by caller, library purpose is file decryption
 	if err != nil {
-		return crypto.WrapError("create destination file", err)
+		return WrapError("create destination file", err)
 	}
 	defer dstFile.Close()
 
@@ -88,7 +87,7 @@ func (d *Decryptor) DecryptFile(ctx context.Context, srcPath, dstPath string) er
 	bufferedWriter := bufio.NewWriterSize(dstFile, d.chunkSize)
 	defer func() {
 		if flushErr := bufferedWriter.Flush(); flushErr != nil && err == nil {
-			err = crypto.WrapError("flush buffer", flushErr)
+			err = WrapError("flush buffer", flushErr)
 		}
 	}()
 
@@ -98,7 +97,7 @@ func (d *Decryptor) DecryptFile(ctx context.Context, srcPath, dstPath string) er
 
 	if d.checksum {
 		if _, err := CalculateChecksum(dstPath); err != nil {
-			return crypto.WrapError("calculate checksum", err)
+			return WrapError("calculate checksum", err)
 		}
 	}
 
@@ -118,17 +117,17 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return crypto.WrapError("create cipher", err)
+		return WrapError("create cipher", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return crypto.WrapError("create GCM", err)
+		return WrapError("create GCM", err)
 	}
 
 	magic := make([]byte, len(MagicBytes))
 	if _, err := io.ReadFull(src, magic); err != nil {
-		return crypto.WrapError("read magic bytes", err)
+		return WrapError("read magic bytes", err)
 	}
 	if string(magic) != MagicBytes {
 		return fmt.Errorf("invalid file format: expected magic bytes %q, got %q", MagicBytes, magic)
@@ -136,7 +135,7 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 	version := make([]byte, 1)
 	if _, err := io.ReadFull(src, version); err != nil {
-		return crypto.WrapError("read version byte", err)
+		return WrapError("read version byte", err)
 	}
 	if version[0] != byte(Version) { // #nosec G602 -- version is size 1, ReadFull ensures it's filled
 		return fmt.Errorf("unsupported file version: expected %d, got %d", Version, version[0])
@@ -144,12 +143,12 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 	baseNonce := make([]byte, NonceSize)
 	if _, err := io.ReadFull(src, baseNonce); err != nil {
-		return crypto.WrapError("read nonce", err)
+		return WrapError("read nonce", err)
 	}
 
 	sizeBytes := make([]byte, 8)
 	if _, err := io.ReadFull(src, sizeBytes); err != nil {
-		return crypto.WrapError("read size", err)
+		return WrapError("read size", err)
 	}
 
 	aad := sizeBytes
@@ -167,7 +166,7 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 	for {
 		if ctx.Err() != nil {
-			return crypto.ErrContextCanceled
+			return ErrContextCanceled
 		}
 
 		chunkSizeBytes := make([]byte, 4)
@@ -176,19 +175,19 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 			break
 		}
 		if err != nil {
-			return crypto.WrapError("read chunk size", err)
+			return WrapError("read chunk size", err)
 		}
 
 		chunkSize := binary.BigEndian.Uint32(chunkSizeBytes)
 
 		// #nosec G115 -- int to uint32 conversion safe (MaxChunkSize is 10MB)
 		if chunkSize == 0 || chunkSize > uint32(MaxChunkSize+gcm.Overhead()) {
-			return crypto.ErrChunkSize
+			return ErrChunkSize
 		}
 
 		ciphertext := make([]byte, chunkSize)
 		if _, err := io.ReadFull(src, ciphertext); err != nil {
-			return crypto.WrapError("read encrypted chunk", err)
+			return WrapError("read encrypted chunk", err)
 		}
 
 		nonce := make([]byte, NonceSize)
@@ -198,11 +197,11 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 		plaintext, err := gcm.Open(nil, nonce, ciphertext, aad)
 		if err != nil {
-			return crypto.WrapError("decrypt chunk (authentication failed)", err)
+			return WrapError("decrypt chunk (authentication failed)", err)
 		}
 
 		if _, err := dst.Write(plaintext); err != nil {
-			return crypto.WrapError("write plaintext chunk", err)
+			return WrapError("write plaintext chunk", err)
 		}
 
 		written += int64(len(plaintext))

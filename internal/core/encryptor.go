@@ -19,7 +19,6 @@ import (
 	"os"
 	"sync"
 
-	crypto "github.com/gitrgoliveira/go-fileencrypt/internal/crypto"
 	"github.com/gitrgoliveira/go-fileencrypt/secure"
 )
 
@@ -82,13 +81,13 @@ func (e *Encryptor) EncryptFile(ctx context.Context, srcPath, dstPath string) er
 
 	srcFile, err := os.Open(srcPath) // #nosec G304 -- File path provided by caller, library purpose is file encryption
 	if err != nil {
-		return crypto.WrapError("open source file", err)
+		return WrapError("open source file", err)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := os.Create(dstPath) // #nosec G304 -- File path provided by caller, library purpose is file encryption
 	if err != nil {
-		return crypto.WrapError("create destination file", err)
+		return WrapError("create destination file", err)
 	}
 	defer dstFile.Close()
 
@@ -96,13 +95,13 @@ func (e *Encryptor) EncryptFile(ctx context.Context, srcPath, dstPath string) er
 	bufferedWriter := bufio.NewWriterSize(dstFile, e.chunkSize)
 	defer func() {
 		if flushErr := bufferedWriter.Flush(); flushErr != nil && err == nil {
-			err = crypto.WrapError("flush buffer", flushErr)
+			err = WrapError("flush buffer", flushErr)
 		}
 	}()
 
 	stat, err := srcFile.Stat()
 	if err != nil {
-		return crypto.WrapError("stat source file", err)
+		return WrapError("stat source file", err)
 	}
 	totalSize := stat.Size()
 
@@ -112,7 +111,7 @@ func (e *Encryptor) EncryptFile(ctx context.Context, srcPath, dstPath string) er
 
 	if e.checksum {
 		if _, err := CalculateChecksum(dstPath); err != nil {
-			return crypto.WrapError("calculate checksum", err)
+			return WrapError("calculate checksum", err)
 		}
 	}
 
@@ -137,28 +136,28 @@ func (e *Encryptor) EncryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return crypto.WrapError("create cipher", err)
+		return WrapError("create cipher", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return crypto.WrapError("create GCM", err)
+		return WrapError("create GCM", err)
 	}
 
 	baseNonce := make([]byte, NonceSize)
 	if _, err := rand.Read(baseNonce); err != nil {
-		return crypto.WrapError("generate nonce", err)
+		return WrapError("generate nonce", err)
 	}
 
 	if _, err := dst.Write([]byte(MagicBytes)); err != nil {
-		return crypto.WrapError("write magic bytes", err)
+		return WrapError("write magic bytes", err)
 	}
 	if _, err := dst.Write([]byte{Version}); err != nil {
-		return crypto.WrapError("write version byte", err)
+		return WrapError("write version byte", err)
 	}
 
 	if _, err := dst.Write(baseNonce); err != nil {
-		return crypto.WrapError("write nonce", err)
+		return WrapError("write nonce", err)
 	}
 
 	var totalSize int64
@@ -168,7 +167,7 @@ func (e *Encryptor) EncryptStream(ctx context.Context, src io.Reader, dst io.Wri
 	sizeBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(sizeBytes, uint64(totalSize)) // #nosec G115 -- int64 to uint64 conversion safe for file sizes
 	if _, err := dst.Write(sizeBytes); err != nil {
-		return crypto.WrapError("write file size", err)
+		return WrapError("write file size", err)
 	}
 
 	aad := sizeBytes
@@ -187,7 +186,7 @@ func (e *Encryptor) EncryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 	for {
 		if ctx.Err() != nil {
-			return crypto.ErrContextCanceled
+			return ErrContextCanceled
 		}
 
 		n, err := src.Read(buf)
@@ -206,11 +205,11 @@ func (e *Encryptor) EncryptStream(ctx context.Context, src io.Reader, dst io.Wri
 			chunkSizeBytes := make([]byte, 4)
 			binary.BigEndian.PutUint32(chunkSizeBytes, uint32(len(ciphertext))) // #nosec G115 -- len() result fits in uint32 (max chunk is 10MB)
 			if _, err := dst.Write(chunkSizeBytes); err != nil {
-				return crypto.WrapError("write chunk size", err)
+				return WrapError("write chunk size", err)
 			}
 
 			if _, err := dst.Write(ciphertext); err != nil {
-				return crypto.WrapError("write encrypted chunk", err)
+				return WrapError("write encrypted chunk", err)
 			}
 
 			written += int64(n)
@@ -226,7 +225,7 @@ func (e *Encryptor) EncryptStream(ctx context.Context, src io.Reader, dst io.Wri
 			break
 		}
 		if err != nil {
-			return crypto.WrapError("read source stream", err)
+			return WrapError("read source stream", err)
 		}
 	}
 

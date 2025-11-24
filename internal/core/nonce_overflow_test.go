@@ -14,8 +14,6 @@ import (
 	"context"
 	"crypto/rand"
 	"testing"
-
-	crypto "github.com/gitrgoliveira/go-fileencrypt/internal/crypto"
 )
 
 // TestNonceOverflow triggers the nonce overflow path by initializing the
@@ -55,6 +53,4 @@ func TestNonceOverflow(t *testing.T) {
 
 	// Ensure no sensitive data remains in key buffer
 	enc.Destroy()
-	// Validate SecureBuffer destroyed via crypto package (best-effort)
-	_ = crypto.ErrContextCanceled
 }

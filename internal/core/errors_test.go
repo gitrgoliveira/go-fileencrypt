@@ -4,7 +4,7 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-package crypto
+package core
 
 import (
 	"errors"
