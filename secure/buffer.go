@@ -4,6 +4,15 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
+// Package secure provides primitives for handling sensitive data securely in memory.
+//
+// It offers a SecureBuffer implementation that:
+//   - Locks memory to prevent swapping to disk (using mlock on supported platforms)
+//   - Securely zeroes memory when destroyed
+//   - Provides a safe API for accessing sensitive bytes
+//
+// This package is designed to minimize the risk of sensitive data (like encryption keys)
+// leaking to disk or remaining in memory longer than necessary.
 package secure
 
 import (
