@@ -20,11 +20,12 @@ import (
 	"sync"
 
 	crypto "github.com/gitrgoliveira/go-fileencrypt/internal/crypto"
+	"github.com/gitrgoliveira/go-fileencrypt/secure"
 )
 
 // Encryptor handles chunked encryption of files and streams.
 type Encryptor struct {
-	keyBuf     *crypto.SecureBuffer
+	keyBuf     *secure.SecureBuffer
 	chunkSize  int
 	progress   func(float64)
 	checksum   bool
@@ -50,7 +51,7 @@ func NewEncryptor(key []byte, opts ...Option) (*Encryptor, error) {
 	if cfg.ChunkSize < MinChunkSize || cfg.ChunkSize > MaxChunkSize {
 		return nil, fmt.Errorf("invalid chunk size: must be between %d and %d bytes, got %d", MinChunkSize, MaxChunkSize, cfg.ChunkSize)
 	}
-	keyBuf, err := crypto.NewSecureBufferFromBytes(key)
+	keyBuf, err := secure.NewSecureBufferFromBytes(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SecureBuffer for key: %w", err)
 	}

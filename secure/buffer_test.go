@@ -4,15 +4,15 @@
  * https://mozilla.org/MPL/2.0/.
  */
 
-// secure_buffer_test.go: SecureBuffer tests for go-fileencrypt
-package crypto_test
+// buffer_test.go: SecureBuffer tests for go-fileencrypt
+package secure_test
 
 import (
 	"bytes"
 	"crypto/rand"
 	"testing"
 
-	"github.com/gitrgoliveira/go-fileencrypt/internal/crypto"
+	"github.com/gitrgoliveira/go-fileencrypt/secure"
 )
 
 func TestSecureBufferDestroy(t *testing.T) {
@@ -23,7 +23,7 @@ func TestSecureBufferDestroy(t *testing.T) {
 	}
 
 	// Create SecureBuffer
-	buf, err := crypto.NewSecureBufferFromBytes(key)
+	buf, err := secure.NewSecureBufferFromBytes(key)
 	if err != nil {
 		t.Fatalf("NewSecureBufferFromBytes failed: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestSecureBufferDestroy(t *testing.T) {
 func TestSecureBufferCreate(t *testing.T) {
 	key := []byte("test key material for buffer")
 
-	buf, err := crypto.NewSecureBufferFromBytes(key)
+	buf, err := secure.NewSecureBufferFromBytes(key)
 	if err != nil {
 		t.Fatalf("NewSecureBufferFromBytes failed: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestSecureBufferMultipleDestroy(t *testing.T) {
 		t.Fatalf("failed to generate key: %v", err)
 	}
 
-	buf, err := crypto.NewSecureBufferFromBytes(key)
+	buf, err := secure.NewSecureBufferFromBytes(key)
 	if err != nil {
 		t.Fatalf("NewSecureBufferFromBytes failed: %v", err)
 	}

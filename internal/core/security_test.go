@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	crypto "github.com/gitrgoliveira/go-fileencrypt/internal/crypto"
+	"github.com/gitrgoliveira/go-fileencrypt/secure"
 )
 
 func TestNonceUniqueness(t *testing.T) {
@@ -167,7 +167,7 @@ func TestMemoryLocking(t *testing.T) {
 	}
 
 	// Create SecureBuffer
-	buf, err := crypto.NewSecureBufferFromBytes(key)
+	buf, err := secure.NewSecureBufferFromBytes(key)
 	if err != nil {
 		t.Fatalf("failed to create SecureBuffer: %v", err)
 	}
