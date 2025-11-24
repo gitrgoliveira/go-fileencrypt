@@ -44,10 +44,6 @@ func NewSecureBuffer(size int) (*SecureBuffer, error) {
 
 	data := make([]byte, size)
 
-	// Lock the buffer in memory (best effort)
-	// We intentionally ignore errors here as memory locking may not be available
-	// on all platforms. The encryption will still work securely without it.
-	// Note: LockMemory is in this package
 	err := LockMemory(data)
 	unlock := func() {}
 	if err == nil {
@@ -92,7 +88,7 @@ func (sb *SecureBuffer) Data() []byte {
 // This method is idempotent - calling it multiple times is safe.
 func (sb *SecureBuffer) Destroy() {
 	if sb.data != nil {
-		Zero(sb.data) // Zero is in this package
+		Zero(sb.data)
 		sb.data = nil
 	}
 

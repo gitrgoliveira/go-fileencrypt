@@ -68,26 +68,22 @@ func NewDecryptor(key []byte, opts ...Option) (*Decryptor, error) {
 
 // DecryptFile performs chunked decryption of a file.
 func (d *Decryptor) DecryptFile(ctx context.Context, srcPath, dstPath string) error {
-	// Validate algorithm
 	if !d.algorithm.IsSupported() {
 		return fmt.Errorf("unsupported algorithm: %s (only AES-256-GCM is currently supported)", d.algorithm)
 	}
 
-	// Open source file (follows symlinks automatically)
 	srcFile, err := os.Open(srcPath) // #nosec G304 -- File path provided by caller, library purpose is file decryption
 	if err != nil {
 		return crypto.WrapError("open source file", err)
 	}
 	defer srcFile.Close()
 
-	// Create destination file
 	dstFile, err := os.Create(dstPath) // #nosec G304 -- File path provided by caller, library purpose is file decryption
 	if err != nil {
 		return crypto.WrapError("create destination file", err)
 	}
 	defer dstFile.Close()
 
-	// Create buffered reader and writer for improved I/O performance
 	bufferedReader := bufio.NewReaderSize(srcFile, d.chunkSize)
 	bufferedWriter := bufio.NewWriterSize(dstFile, d.chunkSize)
 	defer func() {
@@ -96,15 +92,11 @@ func (d *Decryptor) DecryptFile(ctx context.Context, srcPath, dstPath string) er
 		}
 	}()
 
-	// Delegate to DecryptStream (which will read the header and handle decryption)
-	// Note: DecryptStream reads the file size from the header for progress reporting
 	if err := d.DecryptStream(ctx, bufferedReader, bufferedWriter); err != nil {
 		return err
 	}
 
-	// Verify checksum if requested
 	if d.checksum {
-		// Calculate checksum of decrypted file
 		if _, err := CalculateChecksum(dstPath); err != nil {
 			return crypto.WrapError("calculate checksum", err)
 		}
@@ -115,18 +107,15 @@ func (d *Decryptor) DecryptFile(ctx context.Context, srcPath, dstPath string) er
 
 // DecryptStream performs chunked decryption of a stream.
 func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Writer, sizeHint ...int64) error {
-	// Validate algorithm
 	if !d.algorithm.IsSupported() {
 		return fmt.Errorf("unsupported algorithm: %s (only AES-256-GCM is currently supported)", d.algorithm)
 	}
 
-	// Validate key length
 	key := d.keyBuf.Data()
 	if len(key) != 32 {
 		return fmt.Errorf("invalid key length: must be 32 bytes for AES-256")
 	}
 
-	// Create AES-GCM cipher
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return crypto.WrapError("create cipher", err)
@@ -137,7 +126,6 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 		return crypto.WrapError("create GCM", err)
 	}
 
-	// Read and validate Magic Header
 	magic := make([]byte, len(MagicBytes))
 	if _, err := io.ReadFull(src, magic); err != nil {
 		return crypto.WrapError("read magic bytes", err)
@@ -154,7 +142,6 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 		return fmt.Errorf("unsupported file version: expected %d, got %d", Version, version[0])
 	}
 
-	// Read nonce and size from header
 	baseNonce := make([]byte, NonceSize)
 	if _, err := io.ReadFull(src, baseNonce); err != nil {
 		return crypto.WrapError("read nonce", err)
@@ -165,10 +152,8 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 		return crypto.WrapError("read size", err)
 	}
 
-	// Use file size as Additional Authenticated Data for GCM
 	aad := sizeBytes
 
-	// Get total size for progress reporting (from header or sizeHint)
 	fileSizeUint64 := binary.BigEndian.Uint64(sizeBytes)
 	var totalSize int64
 	if fileSizeUint64 > 0 {
@@ -177,7 +162,6 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 		totalSize = sizeHint[0]
 	}
 
-	// Decrypt chunks
 	var written int64
 	var chunkCounter uint32
 
@@ -186,7 +170,6 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 			return crypto.ErrContextCanceled
 		}
 
-		// Read chunk size
 		chunkSizeBytes := make([]byte, 4)
 		_, err := io.ReadFull(src, chunkSizeBytes)
 		if err == io.EOF {
@@ -198,46 +181,42 @@ func (d *Decryptor) DecryptStream(ctx context.Context, src io.Reader, dst io.Wri
 
 		chunkSize := binary.BigEndian.Uint32(chunkSizeBytes)
 
-		// Validate chunk size
 		// #nosec G115 -- int to uint32 conversion safe (MaxChunkSize is 10MB)
 		if chunkSize == 0 || chunkSize > uint32(MaxChunkSize+gcm.Overhead()) {
 			return crypto.ErrChunkSize
 		}
 
-		// Read encrypted chunk
 		ciphertext := make([]byte, chunkSize)
 		if _, err := io.ReadFull(src, ciphertext); err != nil {
 			return crypto.WrapError("read encrypted chunk", err)
 		}
 
-		// Create chunk-specific nonce
 		nonce := make([]byte, NonceSize)
 		copy(nonce, baseNonce)
 		binary.BigEndian.PutUint32(nonce[8:], chunkCounter)
 		chunkCounter++
 
-		// Decrypt chunk (use file size as AAD for authentication)
 		plaintext, err := gcm.Open(nil, nonce, ciphertext, aad)
 		if err != nil {
 			return crypto.WrapError("decrypt chunk (authentication failed)", err)
 		}
 
-		// Write plaintext
 		if _, err := dst.Write(plaintext); err != nil {
 			return crypto.WrapError("write plaintext chunk", err)
 		}
 
 		written += int64(len(plaintext))
 
-		// Report progress (if sizeHint is provided)
 		if d.progress != nil && totalSize > 0 {
-			// Report as a fraction between 0.0 and 1.0 to match EncryptStream
 			progress := float64(written) / float64(totalSize)
 			d.progress(progress)
 		}
 	}
 
-	// Report completion as fraction 1.0
+	if totalSize > 0 && written != totalSize {
+		return fmt.Errorf("unexpected EOF: decrypted %d bytes, expected %d", written, totalSize)
+	}
+
 	if d.progress != nil {
 		d.progress(1.0)
 	}
