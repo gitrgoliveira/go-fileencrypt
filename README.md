@@ -25,12 +25,11 @@ Secure, streaming file encryption and decryption library for Go using AES-256-GC
 - **Context Support**: Cancellation and timeout support for all operations
 - **Modern Key Derivation**: **Argon2id (recommended)** and PBKDF2-HMAC-SHA256 support
 - **GPU-Resistant**: Argon2id provides superior protection against GPU/ASIC attacks
-- **Future-Proof**: Reserved algorithm IDs for ChaCha20-Poly1305 and post-quantum cryptography
-- **Well Tested**: 95+ tests with high coverage, race detector, security scans
 
 ## Table of Contents
 
 - [Installation](#installation)
+- [Supported Platforms](#supported-platforms)
 - [Quick Start](#quick-start)
 - [Usage Examples](#usage-examples)
 - [API Reference](#api-reference)
@@ -49,6 +48,29 @@ go get github.com/gitrgoliveira/go-fileencrypt
 
 **Requirements:**
 - Go 1.25 or later
+
+## Supported Platforms
+
+This library works across all major operating systems:
+
+- **Linux**: Full support with memory locking via `mlock(2)`
+- **macOS**: Full support with memory locking via `mlock(2)`
+- **Windows**: Full support (memory locking is no-op)
+
+### Platform-Specific Features
+
+**Memory Locking:**
+- On Unix-based systems (Linux, macOS), the library uses `mlock()` to prevent sensitive data from being swapped to disk
+- On Windows, memory locking is currently a no-op (not implemented)
+- All platforms support secure memory zeroing via `secure.Zero()`
+
+**File Permissions:**
+- Unix/macOS: Use `0600` permissions for encrypted files (owner read/write only)
+- Windows: NTFS ACLs apply; consider restricting access to the current user
+
+**Performance:**
+- Performance is consistent across platforms
+- Benchmarks shown in this README were conducted on Apple M1 Pro (ARM64)
 
 ## Quick Start
 
@@ -187,19 +209,6 @@ if err == context.DeadlineExceeded {
 }
 ```
 
-### Algorithm Selection (Future)
-
-```go
-// Currently only AES-256-GCM is supported
-err := fileencrypt.EncryptFile(ctx, src, dst, key,
-	fileencrypt.WithAlgorithm(fileencrypt.AlgorithmAESGCM),
-)
-
-// Future algorithms (reserved):
-// fileencrypt.AlgorithmChaCha20Poly1305 (ID: 2)
-// fileencrypt.AlgorithmMLKEMHybrid (ID: 3)
-```
-
 For more examples, see the `examples/` directory and run them locally:
 - `examples/basic/` — Basic encryption/decryption
 - `examples/with-password/` — Password-based encryption (PBKDF2)
@@ -219,7 +228,6 @@ Encrypts a file from `srcPath` to `dstPath` using the provided 32-byte key.
 **Options:**
 - `WithChunkSize(size int)` - Set chunk size (default: `DefaultChunkSize` = 1MB, allowed range: 1 byte to `MaxChunkSize` = 10MB).
 - `WithProgress(callback func(float64))` - Progress callback (receives a fraction between `0.0` and `1.0`).
-- `WithAlgorithm(alg Algorithm)` - Select encryption algorithm (default: AES-256-GCM)
 
 #### DecryptFile
 ```go
@@ -313,22 +321,25 @@ Lock/unlock memory pages (uses `mlock` on Unix/macOS, no-op on Windows).
 
 ### Benchmarks
 
-Tested on Apple M1 Pro (performance on Intel i5-8400 will vary):
+Tested on **Apple M1 Pro**:
 
 | Operation | File Size | Throughput | Time |
-|-----------|-----------|------------|------|
-| Encryption | 1 MB | ~711 MB/s | ~1.4 ms |
-| Encryption | 100 MB | ~767 MB/s | ~130 ms |
-| Encryption | 1 GB | ~750 MB/s | ~1.4 s |
-| Decryption | 100 MB | ~827 MB/s | ~121 ms |
-| PBKDF2 (600k iter) | 32 bytes | N/A | ~2.6 s |
+|-----------|-----------|------------|---------|
+| Encryption | 1 MB | ~949 MB/s | ~1.1 ms |
+| Encryption | 10 MB | ~1361 MB/s | ~7.7 ms |
+| Encryption | 100 MB | ~1039 MB/s | ~101 ms |
+| Encryption | 1 GB | ~235 MB/s | ~4.6 s |
+| Decryption | 1 MB | ~1260 MB/s | ~0.8 ms |
+| Decryption | 10 MB | ~1362 MB/s | ~7.7 ms |
+| Decryption | 100 MB | ~1338 MB/s | ~78 ms |
+| Decryption | 1 GB | ~800 MB/s | ~1.3 s |
+| PBKDF2 (600k iter) | - | - | ~76 ms |
 
 **Chunk Size Impact** (10MB file):
-- 64KB chunks: ~400 MB/s
-- 1MB chunks: ~800 MB/s (default, recommended)
-- 4MB chunks: ~850 MB/s
-
-Target: 1GB encryption/decryption in <120s on Intel i5-8400 (6-core, 2.8GHz) - Achieved
+- 64KB chunks: ~1376 MB/s
+- 256KB chunks: ~1478 MB/s
+- 1MB chunks: ~1483 MB/s (default, recommended)
+- 4MB chunks: ~1409 MB/s
 
 Run benchmarks yourself:
 ```bash
@@ -384,16 +395,9 @@ Always treat authentication failures as potential security issues.
 
 Yes. Each encryption uses a unique random nonce, so the output will be different each time. However, for better security, consider using different keys for different files.
 
-### How do I migrate from another encryption library?
-
-See [docs/MIGRATION.md](docs/MIGRATION.md) for migration guides from:
-- `golang.org/x/crypto` (NaCl, direct GCM)
-- `age` encryption tool
-- OpenSSL command-line
-
 ### What about post-quantum cryptography?
 
-Algorithm ID 3 is reserved for ML-KEM hybrid post-quantum encryption (planned for v2.0). Current AES-256-GCM is considered quantum-resistant for confidentiality (but not authentication).
+Post-quantum cryptography support may be considered in future versions
 
 ## Environment Variables
 
@@ -416,7 +420,7 @@ Contributions are welcome! Please:
 4. Update documentation as needed
 5. Run `make validate-all` before submitting
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details (if available).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 

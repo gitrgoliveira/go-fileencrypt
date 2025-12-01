@@ -20,7 +20,6 @@
 //   - Context support for cancellation and timeouts
 //   - Progress tracking callbacks
 //   - Modern key derivation: Argon2id (recommended) and PBKDF2-HMAC-SHA256
-//   - Future-proof with reserved algorithm IDs for ChaCha20-Poly1305 and post-quantum crypto
 //
 // # Basic Usage
 //
