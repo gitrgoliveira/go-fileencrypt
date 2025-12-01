@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/gitrgoliveira/go-fileencrypt/workflows/CI/badge.svg)](https://github.com/gitrgoliveira/go-fileencrypt/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gitrgoliveira/go-fileencrypt)](https://goreportcard.com/report/github.com/gitrgoliveira/go-fileencrypt)
-[![codecov](https://codecov.io/gh/gitrgoliveira/go-fileencrypt/branch/main/graph/badge.svg)](https://codecov.io/gh/gitrgoliveira/go-fileencrypt)
 [![GoDoc](https://godoc.org/github.com/gitrgoliveira/go-fileencrypt?status.svg)](https://godoc.org/github.com/gitrgoliveira/go-fileencrypt)
 
 Secure, streaming file encryption and decryption library for Go using AES-256-GCM. Designed for cross-platform use with memory-safe key handling, chunked processing for large files, and support for external libraries to enhance functionality.
