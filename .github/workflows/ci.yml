@@ -70,7 +70,7 @@ jobs:
           echo "Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: |
@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload gosec report (if generated)
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: gosec-report
           path: gosec-report.json
