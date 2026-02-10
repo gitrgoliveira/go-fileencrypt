@@ -11,14 +11,6 @@ import (
 	"github.com/gitrgoliveira/go-fileencrypt/secure"
 )
 
-// Helper: Assert checks a condition and fails the test if false.
-func assertTrue(t *testing.T, condition bool, msg string) {
-	t.Helper()
-	if !condition {
-		t.Error(msg)
-	}
-}
-
 // Helper: wrapper for encryption to reduce boilerplate
 func encryptDataHelper(t *testing.T, key []byte, data []byte, chunkSize int) *bytes.Buffer {
 	t.Helper()
