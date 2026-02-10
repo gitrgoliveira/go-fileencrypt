@@ -16,4 +16,4 @@ gosec ./...
 - Write tests for new functionality and update documentation where applicable.
 - Keep PRs small and focused; reference related issues in the PR description.
 
-Maintainers will review PRs and request changes as needed. Thank you!
+Maintainers review PRs and request changes as needed. Thank you!

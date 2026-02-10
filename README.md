@@ -7,7 +7,7 @@
 Secure, streaming file encryption and decryption library for Go using AES-256-GCM. Designed for cross-platform use with memory-safe key handling, chunked processing for large files, and support for external libraries to enhance functionality.
 
 > [!WARNING]
-> This library is provided "as-is" under the Mozilla Public License 2.0 (see [LICENSE](LICENSE) for details). While it implements industry-standard cryptographic primitives (AES-256-GCM), **it has not undergone independent security audits**. For production use, especially in security-critical applications, you should:
+> This library ships "as-is" under the Mozilla Public License 2.0 (refer to [LICENSE](LICENSE) for details). While it implements industry-standard cryptographic primitives (AES-256-GCM), **it has not undergone independent security audits**. For production use, especially in security-critical applications, you should:
 > - Conduct your own security review or hire a professional security auditor
 > - Follow the security best practices outlined in this documentation
 > - Stay updated on security advisories and updates
@@ -69,7 +69,7 @@ This library works across all major operating systems:
 
 **Performance:**
 - Performance is consistent across platforms
-- Benchmarks shown in this README were conducted on Apple M1 Pro (ARM64)
+- The benchmarks in this README use an Apple M1 Pro (ARM64)
 
 ## Quick Start
 
@@ -208,7 +208,7 @@ if err == context.DeadlineExceeded {
 }
 ```
 
-For more examples, see the `examples/` directory and run them locally:
+For more examples, refer to the `examples/` directory and run them locally:
 - `examples/basic/` — Basic encryption/decryption
 - `examples/with-password/` — Password-based encryption (PBKDF2)
 - `examples/with-argon2/` — Password-based encryption with Argon2id
@@ -368,7 +368,7 @@ Keys should never be stored in plaintext. Options include:
 
 ### Can I use this for encrypting data in transit?
 
-This library is designed for **data at rest** (file encryption). For data in transit, use TLS/HTTPS.
+This library encrypts **data at rest** (file encryption). For data in transit, use TLS/HTTPS.
 
 ### How do I handle the salt for password-based encryption?
 
@@ -396,7 +396,7 @@ Yes. Each encryption uses a unique random nonce, so the output will be different
 
 ### What about post-quantum cryptography?
 
-Post-quantum cryptography support may be considered in future versions
+The file format reserves algorithm IDs for post-quantum cryptography (ML-KEM hybrid). Refer to [FORMAT.md](docs/FORMAT.md) for details.
 
 ## Environment Variables
 
@@ -419,11 +419,11 @@ Contributions are welcome! Please:
 4. Update documentation as needed
 5. Run `make validate-all` before submitting
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-Mozilla Public License 2.0 - see [LICENSE](LICENSE) for details.
+Mozilla Public License 2.0 - refer to [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 

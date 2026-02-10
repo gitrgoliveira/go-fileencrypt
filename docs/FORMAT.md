@@ -2,18 +2,18 @@
 
 ## Overview
 
-This document describes the encrypted file format used by go-fileencrypt. The format is designed for:
+This document describes the encrypted file format that go-fileencrypt uses. The format provides:
 - **Streaming encryption/decryption** of arbitrarily large files
 - **Forward compatibility** with future cryptographic algorithms
 - **Integrity protection** with authenticated encryption
 - **Efficient chunked processing** for memory-constrained environments
 
-## Format Version
+## Format version
 
 **Current Version**: 1.0  
 **Algorithm**: AES-256-GCM (Algorithm ID: 1)
 
-## File Structure
+## File structure
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -34,9 +34,9 @@ This document describes the encrypted file format used by go-fileencrypt. The fo
 └─────────────────────────────────────────────────┘
 ```
 
-## Header Format
+## Header format
 
-### Magic Bytes (3 bytes)
+### Magic bytes (3 bytes)
 
 - **Offset**: 0
 - **Value**: "GFE" (Go File Encrypt)
@@ -59,7 +59,7 @@ This document describes the encrypted file format used by go-fileencrypt. The fo
 
 **Security Note**: The nonce MUST be unique per encryption operation. Never reuse a nonce with the same key.
 
-### File Size (8 bytes)
+### File size (8 bytes)
 
 - **Offset**: 16
 - **Length**: 8 bytes (64 bits)
@@ -68,7 +68,7 @@ This document describes the encrypted file format used by go-fileencrypt. The fo
 - **Range**: 0 to 2^64-1 bytes (~18.4 exabytes)
 - **Security**: Authenticated to prevent truncation attacks
 
-## Chunk Format
+## Chunk format
 
 Each chunk consists of:
 
@@ -80,7 +80,7 @@ Each chunk consists of:
 - **Range**: 17 bytes (1 byte plaintext + 16 byte tag) to 10,485,776 bytes (10MB + 16 bytes)
 - **Validation**: Must be ≥17 and ≤10,485,776
 
-### Encrypted Data + Tag
+### Encrypted data + tag
 
 - **Length**: Variable (specified by chunk size field)
 - **Composition**: [Encrypted plaintext][16-byte GCM authentication tag]
@@ -104,9 +104,9 @@ Future versions may prepend an algorithm identifier:
 - `0x03`: ML-KEM Hybrid Post-Quantum (reserved)
 - `0x04-0xFF`: Reserved for future use
 
-When algorithm IDs are implemented, the library will remain backward compatible with version 1.0 files (no algorithm ID byte).
+When algorithm IDs are implemented, the library remains backward compatible with version 1.0 files (no algorithm ID byte).
 
-## Encryption Process
+## Encryption process
 
 1. **Generate Base Nonce**: 12 random bytes using `crypto/rand`
 2. **Write Header**: Write nonce and original file size
@@ -116,7 +116,7 @@ When algorithm IDs are implemented, the library will remain backward compatible 
    - Encrypt with AES-256-GCM (nonce, plaintext) → ciphertext + tag
    - Write chunk size (4 bytes) + encrypted data + tag
 
-## Decryption Process
+## Decryption process
 
 1. **Read Header**: Extract nonce and original file size
 2. **Process Chunks**:
@@ -127,7 +127,7 @@ When algorithm IDs are implemented, the library will remain backward compatible 
    - Verify authentication tag
    - Write plaintext
 
-## Security Properties
+## Security properties
 
 ### Authentication
 
@@ -135,31 +135,31 @@ When algorithm IDs are implemented, the library will remain backward compatible 
 - **Chunk Integrity**: Each chunk has a GCM authentication tag
 - **Tamper Detection**: Any modification triggers authentication failure
 
-### Nonce Management
+### Nonce management
 
 - **Uniqueness**: Base nonce is randomly generated per file
 - **No Reuse**: Each chunk uses a unique nonce (base + index)
 - **Overflow Protection**: Nonce counter is 96 bits (supports 2^96 chunks)
 
-### Chunk Size Validation
+### Chunk size validation
 
 - **Minimum**: 17 bytes (1 byte plaintext + 16 byte GCM tag)
 - **Maximum**: 10,485,776 bytes (10MB plaintext + 16 byte tag)
 - **Purpose**: Prevents resource exhaustion attacks
 
-## Overhead Calculation
+## Overhead calculation
 
-### Per-File Overhead
+### Per-file overhead
 
 - **Header**: 24 bytes (3 bytes magic + 1 byte version + 12-byte nonce + 8-byte size)
 
-### Per-Chunk Overhead
+### Per-chunk overhead
 
 - **Chunk Header**: 4 bytes (chunk size field)
 - **GCM Tag**: 16 bytes (authentication tag)
 - **Total**: 20 bytes per chunk
 
-### Example Overhead
+### Example overhead
 
 For a 1GB file with 1MB chunks:
 - Number of chunks: 1024
@@ -169,26 +169,26 @@ For a 1GB file with 1MB chunks:
 
 ## Compatibility
 
-### Backward Compatibility
+### Backward compatibility
 
-- **v1.0 files**: Will be supported indefinitely
-- **Future versions**: Will detect algorithm ID and use appropriate decryption
+- **v1.0 files**: Supported indefinitely
+- **Future versions**: Detect algorithm ID and use appropriate decryption
 
-### Forward Compatibility
+### Forward compatibility
 
 - **Algorithm ID reservation**: Enables future algorithms without format breaking changes
 - **Version negotiation**: Not yet implemented (planned for v2.0)
 
-## Implementation Notes
+### Implementation notes
 
-### Streaming Support
+### Streaming support
 
 The format supports streaming for files larger than available memory:
 - Header is fixed size (20 bytes)
 - Chunks can be processed individually
 - No need to load entire file into memory
 
-### Chunk Size Selection
+### Chunk size selection
 
 Trade-offs for chunk size selection:
 
@@ -200,27 +200,27 @@ Trade-offs for chunk size selection:
 
 **Recommendation**: Use default 1MB chunks unless you have specific requirements.
 
-## Error Handling
+## Error handling
 
-### Invalid Chunk Size
+### Invalid chunk size
 
 If chunk size is outside valid range:
 - **Error**: "invalid chunk size"
 - **Action**: Abort decryption (possible tampering)
 
-### Authentication Failure
+### Authentication failure
 
 If GCM authentication fails:
 - **Error**: "authentication failed"
 - **Action**: Abort decryption (file has been tampered with)
 
-### Truncated File
+### Truncated file
 
 If file ends unexpectedly:
 - **Error**: "unexpected EOF"
 - **Action**: Abort decryption (incomplete encryption or truncation attack)
 
-## Future Enhancements
+## Future enhancements
 
 ### Planned (v2.0)
 
@@ -229,7 +229,7 @@ If file ends unexpectedly:
 3. **Compression Support**: Optional compression before encryption
 4. **Multi-Key Support**: Support for hybrid encryption (KEMs)
 
-### Under Consideration
+### Under consideration
 
 1. **Version Negotiation**: Explicit version field for compatibility detection
 2. **Header Extensions**: Extensible header format for future fields
