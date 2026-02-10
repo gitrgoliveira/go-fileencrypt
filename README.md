@@ -25,17 +25,18 @@ Secure, streaming file encryption and decryption library for Go using AES-256-GC
 - **Modern Key Derivation**: **Argon2id (recommended)** and PBKDF2-HMAC-SHA256 support
 - **GPU-Resistant**: Argon2id provides superior protection against GPU/ASIC attacks
 
-## Table of Contents
+## Table of contents
 
 - [Installation](#installation)
-- [Supported Platforms](#supported-platforms)
-- [Quick Start](#quick-start)
-- [Usage Examples](#usage-examples)
-- [API Reference](#api-reference)
-- [Security Considerations](#security-considerations)
+- [Supported platforms](#supported-platforms)
+- [Quick start](#quick-start)
+- [Usage examples](#usage-examples)
+- [API reference](#api-reference)
+- [Security considerations](#security-considerations)
 - [Performance](#performance)
 - [Documentation](#documentation)
-- [FAQ](#faq)
+- [Key storage](#key-storage)
+- [Thread safety](#thread-safety)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -48,20 +49,20 @@ go get github.com/gitrgoliveira/go-fileencrypt
 **Requirements:**
 - Go 1.25 or later
 
-## Supported Platforms
+## Supported platforms
 
 This library works across all major operating systems:
 
-- **Linux**: Full support with memory locking via `mlock(2)`
-- **macOS**: Full support with memory locking via `mlock(2)`
+- **Linux**: Full support with memory locking using `mlock(2)`
+- **macOS**: Full support with memory locking using `mlock(2)`
 - **Windows**: Full support (memory locking is no-op)
 
-### Platform-Specific Features
+### Platform-specific features
 
 **Memory Locking:**
 - On Unix-based systems (Linux, macOS), the library uses `mlock()` to prevent sensitive data from being swapped to disk
-- On Windows, memory locking is currently a no-op (not implemented)
-- All platforms support secure memory zeroing via `secure.Zero()`
+- On Windows, memory locking is a no-op (not implemented)
+- All platforms support secure memory zeroing through `secure.Zero()`
 
 **File Permissions:**
 - Unix/macOS: Use `0600` permissions for encrypted files (owner read/write only)
@@ -71,9 +72,9 @@ This library works across all major operating systems:
 - Performance is consistent across platforms
 - The benchmarks in this README use an Apple M1 Pro (ARM64)
 
-## Quick Start
+## Quick start
 
-### Basic File Encryption
+### Basic file encryption
 
 ```go
 package main
@@ -110,7 +111,7 @@ func main() {
 }
 ```
 
-### Password-Based Encryption
+### Password-based encryption
 
 ```go
 package main
@@ -152,7 +153,7 @@ func main() {
 }
 ```
 
-### Stream Encryption
+### Stream encryption
 
 ```go
 // Encrypt from io.Reader to io.Writer
@@ -174,9 +175,9 @@ if err != nil {
 }
 ```
 
-## Usage Examples
+## Usage examples
 
-### Large Files with Progress Tracking
+### Large files with progress tracking
 
 ```go
 chunkOpt, err := fileencrypt.WithChunkSize(1*1024*1024) // 1MB chunks
@@ -196,7 +197,7 @@ err = fileencrypt.EncryptFile(ctx, "large_video.mp4", "large_video.enc", key,
 )
 ```
 
-### Context Cancellation
+### Context cancellation
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -214,9 +215,11 @@ For more examples, refer to the `examples/` directory and run them locally:
 - `examples/with-argon2/` — Password-based encryption with Argon2id
 - `examples/large-files/` — Large files with progress tracking (shows `WithChunkSize` and fractional progress usage)
 
-## API Reference
+## API reference
 
-### Core Functions
+The library exposes the following functions for encryption, decryption, key derivation, and secure memory management.
+
+### Core functions
 
 #### EncryptFile
 ```go
@@ -246,7 +249,7 @@ func DecryptStream(ctx context.Context, src io.Reader, dst io.Writer, key []byte
 ```
 Decrypts data from an `io.Reader` to an `io.Writer`.
 
-### Key Derivation
+### Key derivation
 
 #### DeriveKeyPBKDF2
 ```go
@@ -264,7 +267,7 @@ func GenerateSalt(size int) ([]byte, error)
 ```
 Generates a cryptographically secure random salt. Recommended size: 32 bytes.
 
-### Secure Memory
+### Secure memory
 
 #### secure.Zero
 ```go
@@ -279,7 +282,9 @@ func UnlockMemory(b []byte) error
 ```
 Lock/unlock memory pages (uses `mlock` on Unix/macOS, no-op on Windows).
 
-## Security Considerations
+## Security considerations
+
+Follow these guidelines to use the library securely.
 
 ### Cryptography
 
@@ -289,7 +294,7 @@ Lock/unlock memory pages (uses `mlock` on Unix/macOS, no-op on Windows).
 - **Authentication**: 128-bit GCM tag per chunk
 - **Key Derivation**: PBKDF2-HMAC-SHA256 (600,000 iterations default)
 
-### Best Practices
+### Best practices
 
 **Key Management:**
 - Generate keys using `crypto/rand` (cryptographically secure)
@@ -318,6 +323,8 @@ Lock/unlock memory pages (uses `mlock` on Unix/macOS, no-op on Windows).
 
 ## Performance
 
+The following tables summarize throughput and overhead measurements.
+
 ### Benchmarks
 
 Tested on **Apple M1 Pro**:
@@ -345,7 +352,7 @@ Run benchmarks yourself:
 go test -bench=. ./benchmark -benchtime=10s
 ```
 
-### File Format Overhead
+### File format overhead
 
 - **Header**: 20 bytes (12-byte nonce + 8-byte file size)
 - **Per-chunk**: 20 bytes (4-byte size + 16-byte GCM tag)
@@ -356,49 +363,52 @@ go test -bench=. ./benchmark -benchtime=10s
 - [GoDoc](https://godoc.org/github.com/gitrgoliveira/go-fileencrypt) - API documentation
 - [File Format Specification](docs/FORMAT.md) - Detailed file format description
 
-## FAQ
+## Key storage
 
-### How do I store the encryption key?
+Never store keys in plaintext. The following options provide secure key storage:
 
-Keys should never be stored in plaintext. Options include:
 - **Hardware Security Modules (HSM)**: For production environments
-- **Key Management Services (KMS)**: Cloud providers (AWS KMS, Azure Key Vault, etc.)
+- **Key Management Services (KMS)**: Cloud providers (AWS KMS, Azure Key Vault, and other cloud key management services)
 - **Environment Variables**: For development (not recommended for production)
-- **Password-based**: Derive from user password with PBKDF2
+- **Password-based**: Derive from a user password with PBKDF2
 
-### Can I use this for encrypting data in transit?
+### Salt handling
 
-This library encrypts **data at rest** (file encryption). For data in transit, use TLS/HTTPS.
+Store the salt alongside the encrypted file. Common approaches include the following:
 
-### How do I handle the salt for password-based encryption?
-
-The salt must be stored alongside the encrypted file. Common approaches:
 - Prepend salt to encrypted file: `[32 bytes salt][encrypted data]`
-- Store in separate metadata file: `file.enc` and `file.enc.salt`
+- Store in a separate metadata file: `file.enc` and `file.enc.salt`
 - Include in file header (requires custom format)
 
-### Is this library thread-safe?
+### Decryption errors
 
-Yes. Each encryption/decryption operation is independent and can run concurrently. However, do not share keys across goroutines without proper synchronization (use separate key copies).
+Decryption failures typically indicate one of the following issues:
 
-### What happens if decryption fails?
-
-Decryption failures typically indicate:
 - Wrong key (authentication failed)
 - File corruption or tampering
 - Truncated file
 
 Always treat authentication failures as potential security issues.
 
-### Can I encrypt the same file multiple times with the same key?
+### Nonce reuse
 
-Yes. Each encryption uses a unique random nonce, so the output will be different each time. However, for better security, consider using different keys for different files.
+Each encryption uses a unique random nonce, so encrypting the same file multiple times with the same key produces different output each time. However, for better security, consider using different keys for different files.
 
-### What about post-quantum cryptography?
+### Post-quantum cryptography
 
 The file format reserves algorithm IDs for post-quantum cryptography (ML-KEM hybrid). Refer to [FORMAT.md](docs/FORMAT.md) for details.
 
-## Environment Variables
+## Thread safety
+
+Each encryption/decryption operation is independent and can run concurrently. Do not share keys across goroutines without proper synchronization. Use separate key copies instead.
+
+## Scope
+
+This library encrypts **data at rest** (file encryption). For data in transit, use TLS/HTTPS.
+
+## Environment variables
+
+You can configure runtime behavior with the following environment variables.
 
 ### FILEENCRYPT_CHUNKSIZE_LIMIT
 
