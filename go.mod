@@ -3,7 +3,7 @@ module github.com/gitrgoliveira/go-fileencrypt
 go 1.26.0
 
 require (
-	github.com/dustin/go-humanize v1.0.1
+	github.com/dustin/go-humanize v1.1.0
 	golang.org/x/crypto v0.57.0
 )
 
