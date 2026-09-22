@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.6] - 2026-09-22
 ### Dependencies
 - Updated Go version to 1.27.1.
 - Bumped `golang.org/x/crypto` from 0.48.0 to 0.57.0.
