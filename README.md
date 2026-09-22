@@ -47,7 +47,7 @@ go get github.com/gitrgoliveira/go-fileencrypt
 ```
 
 **Requirements:**
-- Go 1.25 or later
+- Go 1.27 or later
 
 ## Supported platforms
 

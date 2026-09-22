@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Dependencies
+- Updated Go version to 1.27.1.
+- Bumped `golang.org/x/crypto` from 0.48.0 to 0.57.0.
+- Bumped `golang.org/x/sys` from 0.41.0 to 0.48.0.
+- Bumped `github.com/dustin/go-humanize` from 1.0.1 to 1.1.0.
+
 ## [0.1.5] - 2026-02-10
 ### Security
 - Added encryption integrity security proof tests (`security_proof_test.go`).
